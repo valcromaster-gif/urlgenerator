@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image URL Generator</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.container{
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    width:100%;
+    max-width:700px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+}
+
+h1{
+    margin-bottom:20px;
+}
+
+input[type=file]{
+    margin:20px 0;
+}
+
+button{
+    padding:12px 25px;
+    border:none;
+    background:#667eea;
+    color:white;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+#result{
+    margin-top:25px;
+}
+
+#urlField{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+.preview{
+    max-width:100%;
+    margin-top:20px;
+    border-radius:10px;
+}
+
+.loading{
+    display:none;
+    font-weight:bold;
+    margin-top:15px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Image Upload & URL Generator</h1>
+
+    <input
+        type="file"
+        id="fileInput"
+        accept="image/*"
+    >
+
+    <br>
+
+    <button onclick="uploadImage()">
+        Upload Image
+    </button>
+
+    <div id="loading" class="loading">
+        Uploading...
+    </div>
+
+    <div id="result"></div>
+
+</div>
+
+<script>
+
+async function uploadImage(){
+
+    const file =
+        document.getElementById("fileInput").files[0];
+
+    if(!file){
+        alert("Please select an image.");
+        return;
+    }
+
+    document.getElementById("loading")
+        .style.display = "block";
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    formData.append(
+        "upload_preset",
+        "my_uploads"
+    );
+
+    try{
+
+        const response = await fetch(
+            "https://api.cloudinary.com/v1_1/dbpmucd9i/image/upload",
+            {
+                method:"POST",
+                body:formData
+            }
+        );
+
+        const data = await response.json();
+
+        document.getElementById("loading")
+            .style.display = "none";
+
+        if(data.secure_url){
+
+            document.getElementById("result")
+                .innerHTML = `
+                    <h3>Upload Successful</h3>
+
+                    <input
+                        type="text"
+                        id="urlField"
+                        value="${data.secure_url}"
+                        readonly
+                    >
+
+                    <br><br>
+
+                    <button onclick="copyURL()">
+                        Copy URL
+                    </button>
+
+                    <br>
+
+                    <img
+                        class="preview"
+                        src="${data.secure_url}"
+                    >
+                `;
+
+        }else{
+
+            alert(
+                data.error?.message ||
+                "Upload failed"
+            );
+
+        }
+
+    }catch(error){
+
+        document.getElementById("loading")
+            .style.display = "none";
+
+        alert("Upload failed");
+
+        console.error(error);
+    }
+}
+
+function copyURL(){
+
+    const field =
+        document.getElementById("urlField");
+
+    navigator.clipboard.writeText(
+        field.value
+    );
+
+    alert("URL copied!");
+}
+
+</script>
+
+</body>
+</html>
